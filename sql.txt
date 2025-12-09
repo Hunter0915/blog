@@ -19,3 +19,17 @@ WHERE UPPER(LEFT(CITY, 1)) IN ('А', 'Е', 'Ё', 'И', 'О', 'У', 'Ы', 'Э', '
 SELECT CONCAT(Name, '(', LEFT(Occupation, 1), ')') AS formatted_name
 FROM OCCUPATIONS
 ORDER BY Name;
+
+SELECT 
+    MAX(CASE WHEN Occupation = 'Ученик' THEN Name END) AS Ученик,
+    MAX(CASE WHEN Occupation = 'Студент' THEN Name END) AS Студент,
+    MAX(CASE WHEN Occupation = 'Преподаватель' THEN Name END) AS Преподаватель
+FROM (
+    SELECT 
+        Name,
+        Occupation,
+        ROW_NUMBER() OVER (PARTITION BY Occupation ORDER BY Name) AS rn
+    FROM OCCUPATIONS
+) t
+GROUP BY rn
+ORDER BY rn;
