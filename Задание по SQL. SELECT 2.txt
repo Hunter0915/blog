@@ -1,0 +1,3 @@
+1. SELECT DISTINCT CITY FROM STATION WHERE UPPER(RIGHT(CITY, 1)) IN ('А', 'Е', 'Ё', 'И', 'О', 'У', 'Ы', 'Э', 'Ю', 'Я');
+2. SELECT CONCAT(Name, '(', LEFT(Occupation, 1), ')') AS Name_Occ FROM OCCUPATIONS ORDER BY Name;
+3. SELECT MAX(CASE WHEN Occupation = 'Ученик' THEN Name END) AS Ученик, MAX(CASE WHEN Occupation = 'Студент' THEN Name END) AS Студент, MAX(CASE WHEN Occupation = 'Преподаватель' THEN Name END) AS Преподаватель FROM ( SELECT Name, Occupation, ROW_NUMBER() OVER (PARTITION BY Occupation ORDER BY Name) AS rn FROM OCCUPATIONS ) t GROUP BY rn ORDER BY rn;
