@@ -15,3 +15,7 @@ LIMIT 1;
 SELECT DISTINCT CITY
 FROM STATION
 WHERE UPPER(LEFT(CITY, 1)) IN ('А', 'Е', 'Ё', 'И', 'О', 'У', 'Ы', 'Э', 'Ю', 'Я');
+
+SELECT CONCAT(Name, '(', LEFT(Occupation, 1), ')') AS formatted_name
+FROM OCCUPATIONS
+ORDER BY Name;
