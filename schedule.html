@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель управления - Расписание ПИ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            padding: 20px 0;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+        
+        .institute-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .department {
+            font-size: 1.2rem;
+            margin-top: 5px;
+        }
+        
+        .date-info {
+            background-color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            color: #2a5298;
+            font-weight: 500;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            background-color: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .filter-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        select, button {
+            padding: 8px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: white;
+            font-size: 14px;
+        }
+        
+        button {
+            background-color: #2a5298;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #1e3c72;
+        }
+        
+        .schedule-container {
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1000px;
+        }
+        
+        th {
+            background-color: #2a5298;
+            color: white;
+            padding: 12px 15px;
+            text-align: left;
+            position: sticky;
+            top: 0;
+        }
+        
+        td {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        tr:hover {
+            background-color: #f9fafc;
+        }
+        
+        .day-header {
+            background-color: #eef2f7;
+            font-weight: 600;
+        }
+        
+        .lecture {
+            background-color: #e8f4ff;
+            border-left: 4px solid #2a5298;
+        }
+        
+        .practice {
+            background-color: #f0f8ff;
+            border-left: 4px solid #4a90e2;
+        }
+        
+        .time-cell {
+            font-weight: 500;
+            color: #555;
+        }
+        
+        .course-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .teacher {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .room {
+            color: #888;
+            font-size: 0.85rem;
+            margin-top: 3px;
+        }
+        
+        .empty-cell {
+            text-align: center;
+            color: #aaa;
+            font-style: italic;
+        }
+        
+        .group-header {
+            background-color: #1e3c72;
+            color: white;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .filter-group {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <div>
+                    <div class="institute-name">АРКТИЧЕСКИЙ ГОСУДАРСТВЕННЫЙ ИНСТИТУТ КУЛЬТУРЫ И ИСКУССТВ</div>
+                    <div class="department">Кафедра информатики</div>
+                </div>
+                <div class="date-info">Осенний семестр 2025-2026 учебного года</div>
+            </div>
+        </header>
+        
+        <div class="controls">
+            <div class="filter-group">
+                <select id="dayFilter">
+                    <option value="all">Все дни</option>
+                    <option value="monday">Понедельник</option>
+                    <option value="tuesday">Вторник</option>
+                    <option value="wednesday">Среда</option>
+                    <option value="thursday">Четверг</option>
+                    <option value="friday">Пятница</option>
+                    <option value="saturday">Суббота</option>
+                </select>
+                
+                <select id="groupFilter">
+                    <option value="all">Все группы</option>
+                    <option value="pi25">ПИ-25-Б Первый</option>
+                    <option value="pi24">ПИ-24-Б Второй</option>
+                    <option value="pi23">ПИ-23-Б Третий</option>
+                    <option value="pi22">ПИ-22-Б Четвертый</option>
+                </select>
+                
+                <select id="typeFilter">
+                    <option value="all">Все занятия</option>
+                    <option value="lecture">Лекции</option>
+                    <option value="practice">Практические</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <button id="todayBtn">Сегодня</button>
+                <button id="printBtn">Печать</button>
+            </div>
+        </div>
+        
+        <div class="schedule-container">
+            <table id="scheduleTable">
+                <thead>
+                    <tr>
+                        <th>День/Время</th>
+                        <th>ПИ-25-Б Первый</th>
+                        <th>ПИ-24-Б Второй</th>
+                        <th>ПИ-23-Б Третий</th>
+                        <th>ПИ-22-Б Четвертый</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Данные будут вставлены с помощью JavaScript -->
+                </tbody>
+            </table>
+        </div>
+        
+        <footer>
+            <p>Арктический государственный институт культуры и искусств | Кафедра информатики</p>
+            <p>Расписание может изменяться, актуальную информацию уточняйте на кафедре</p>
+        </footer>
+    </div>
+
+    <script>
+        // Данные расписания из Excel
+        const scheduleData = [
+            // Понедельник
+            {
+                day: "Понедельник",
+                lessons: [
+                    {
+                        number: 1,
+                        time: "8:00 - 9:35",
+                        pi25: {
+                            name: "Основы российской государственности",
+                            type: "Лекционное занятие",
+                            teacher: "Холмогорова В. Е.",
+                            room: "ВИ",
+                            class: "lecture"
+                        },
+                        pi24: null,
+                        pi23: null,
+                        pi22: null
+                    },
+                    {
+                        number: 2,
+                        time: "9:50 - 11:25",
+                        pi25: {
+                            name: "Веб-программирование и дизайн",
+                            type: "Лекционное занятие",
+                            teacher: "Петрова Т. А.",
+                            room: "215",
+                            class: "lecture"
+                        },
+                        pi24: null,
+                        pi23: {
+                            name: "Интерактивные медиатехнологии",
+                            type: "Лекционное занятие",
+                            teacher: "Черкашин В. В.",
+                            room: "310",
+                            class: "lecture"
+                        },
+                        pi22: null
+                    },
+                    {
+                        number: 3,
+                        time: "11:40 - 13:15",
+                        pi25: {
+                            name: "Веб-программирование и дизайн",
+                            type: "Практическое занятие",
+                            teacher: "Петрова Т. А.",
+                            room: "215",
+                            class: "practice"
+                        },
+                        pi24: {
+                            name: "Базы данных",
+                            type: "Лекционное занятие",
+                            teacher: "Данилов Э. К.",
+                            room: "214",
+                            class: "lecture"
+                        },
+                        pi23: {
+                            name: "Интерактивные медиатехнологии",
+                            type: "Практическое занятие",
+                            teacher: "Черкашин В. В.",
+                            room: "310",
+                            class: "practice"
+                        },
+                        pi22: null
+                    },
+                    {
+                        number: 4,
+                        time: "14:00 - 15:35",
+                        pi25: null,
+                        pi24: {
+                            name: "Веб-программирование",
+                            type: "Лекционное занятие",
+                            teacher: "Петрова Т. А.",
+                            room: "210",
+                            class: "lecture"
+                        },
+                        pi23: {
+                            name: "Python для анализа и визуализация данных",
+                            type: "Лекционное занятие",
+                            teacher: "Данилов Э. К.",
+                            room: "214",
+                            class: "lecture"
+                        },
+                        pi22: null
+                    },
+                    {
+                        number: 5,
+                        time: "15:50 - 17:25",
+                        pi25: null,
+                        pi24: null,
+                        pi23: {
+                            name: "Научно-исследовательская деятельность",
+                            type: "Лекционное занятие",
+                            teacher: "Готовцева О. Г.",
+                            room: "210",
+                            class: "lecture"
+                        },
+                        pi22: null
+                    }
+                ]
+            },
+            // Вторник
+            {
+                day: "Вторник",
+                lessons: [
+                    {
+                        number: 1,
+                        time: "8:00 - 9:35",
+                        pi25: {
+                            name: "Общая физическая подготовка",
+                            type: "Практическое занятие",
+                            teacher: "Скрябина В. Ф.",
+                            room: "С/К Дохсун",
+                            class: "practice"
+                        },
+                        pi24: null,
+                        pi23: {
+                            name: "Культурология",
+                            type: "Лекционное занятие",
+                            teacher: "Николаев А. А.",
+                            room: "ВИ-1",
+                            class: "lecture"
+                        },
+                        pi22: null
+                    },
+                    {
+                        number: 2,
+                        time: "9:50 - 11:25",
+                        pi25: {
+                            name: "Физическая культура и спорт",
+                            type: "Лекционное занятие",
+                            teacher: "Тарасов А. Е.",
+                            room: "ВИ",
+                            class: "lecture"
+                        },
+                        pi24: null,
+                        pi23: null,
+                        pi22: {
+                            name: "Основы научно-исследовательской работы",
+                            type: "Практическое занятие",
+                            teacher: "Готовцева О. Г.",
+                            room: "210",
+                            class: "practice"
+                        }
+                    },
+                    // Остальные занятия вторника...
+                ]
+            },
+            // Остальные дни недели...
+        ];
+
+        // Функция для отображения расписания
+        function renderSchedule() {
+            const tbody = document.querySelector('#scheduleTable tbody');
+            tbody.innerHTML = '';
+            
+            const dayFilter = document.getElementById('dayFilter').value;
+            const groupFilter = document.getElementById('groupFilter').value;
+            const typeFilter = document.getElementById('typeFilter').value;
+            
+            scheduleData.forEach(dayData => {
+                if (dayFilter !== 'all' && dayFilter !== dayData.day.toLowerCase()) {
+                    return;
+                }
+                
+                dayData.lessons.forEach(lesson => {
+                    const row = document.createElement('tr');
+                    
+                    // Добавляем день и время только для первого занятия дня
+                    if (lesson === dayData.lessons[0]) {
+                        const dayCell = document.createElement('td');
+                        dayCell.className = 'day-header';
+                        dayCell.textContent = dayData.day;
+                        dayCell.rowSpan = dayData.lessons.length;
+                        row.appendChild(dayCell);
+                    }
+                    
+                    // Ячейка с номером пары и временем
+                    const timeCell = document.createElement('td');
+                    timeCell.className = 'time-cell';
+                    timeCell.innerHTML = `<div>${lesson.number} пара</div><div>${lesson.time}</div>`;
+                    row.appendChild(timeCell);
+                    
+                    // Ячейки для каждой группы
+                    ['pi25', 'pi24', 'pi23', 'pi22'].forEach(group => {
+                        const cell = document.createElement('td');
+                        
+                        if (groupFilter !== 'all' && groupFilter !== group) {
+                            cell.className = 'empty-cell';
+                            cell.textContent = '-';
+                            row.appendChild(cell);
+                            return;
+                        }
+                        
+                        const lessonData = lesson[group];
+                        
+                        if (!lessonData) {
+                            cell.className = 'empty-cell';
+                            cell.textContent = 'Нет занятия';
+                        } else if (typeFilter !== 'all' && typeFilter !== lessonData.class) {
+                            cell.className = 'empty-cell';
+                            cell.textContent = '-';
+                        } else {
+                            cell.className = lessonData.class;
+                            cell.innerHTML = `
+                                <div class="course-name">${lessonData.name}</div>
+                                <div class="teacher">${lessonData.teacher}</div>
+                                <div class="room">${lessonData.room}</div>
+                                <div class="type">${lessonData.type}</div>
+                            `;
+                        }
+                        
+                        row.appendChild(cell);
+                    });
+                    
+                    tbody.appendChild(row);
+                });
+            });
+        }
+
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            renderSchedule();
+            
+            // Обработчики событий для фильтров
+            document.getElementById('dayFilter').addEventListener('change', renderSchedule);
+            document.getElementById('groupFilter').addEventListener('change', renderSchedule);
+            document.getElementById('typeFilter').addEventListener('change', renderSchedule);
+            
+            // Кнопка "Сегодня"
+            document.getElementById('todayBtn').addEventListener('click', function() {
+                const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                const today = new Date().getDay();
+                document.getElementById('dayFilter').value = days[today];
+                renderSchedule();
+            });
+            
+            // Кнопка "Печать"
+            document.getElementById('printBtn').addEventListener('click', function() {
+                window.print();
+            });
+        });
+    </script>
+</body>
+                      </html>
