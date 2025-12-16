@@ -41,3 +41,92 @@ FROM STATION;
 SELECT 
     ROUND(SQRT(POWER(MAX(LAT_N) - MIN(LAT_N), 2) + POWER(MAX(LONG_W) - MIN(LONG_W), 2)), 4) AS euclidean_distance
 FROM STATION;
+
+
+# Базовый класс
+class Animal:
+    def __init__(self, name):
+        self.name = name
+
+    def speak(self):
+        raise NotImplementedError("Должен быть реализован в дочернем классе")
+
+    def move(self):
+        print(f"{self.name} двигается")
+
+# Дочерние классы
+class Dog(Animal):
+    def speak(self):
+        return f"{self.name} говорит: Гав!"
+
+    def fetch(self):
+        print(f"{self.name} приносит палку")
+
+class Cat(Animal):
+    def speak(self):
+        return f"{self.name} говорит: Мяу!"
+
+    def climb(self):
+        print(f"{self.name} залезает на дерево")
+
+# Использование
+animals = [
+    Dog("Барсик"),
+    Cat("Мурка")
+]
+
+for animal in animals:
+    print(animal.speak())
+    animal.move()
+
+# Уникальные методы каждого класса
+dog = Dog("Рекс")
+cat = Cat("Василий")
+dog.fetch()
+cat.climb()
+
+
+# Разные классы с одинаковым методом
+class Rectangle:
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+
+    def area(self):
+        return self.width * self.height
+
+class Circle:
+    def __init__(self, radius):
+        self.radius = radius
+
+    def area(self):
+        return 3.14 * self.radius ** 2
+
+class Triangle:
+    def __init__(self, base, height):
+        self.base = base
+        self.height = height
+
+    def area(self):
+        return 0.5 * self.base * self.height
+
+# Функция, использующая полиморфизм
+def print_area(shape):
+    print(f"Площадь фигуры: {shape.area()}")
+
+# Создание объектов разных классов
+shapes = [
+    Rectangle(5, 10),
+    Circle(7),
+    Triangle(6, 8)
+]
+
+# Одинаковый вызов метода для разных объектов
+for shape in shapes:
+    print_area(shape)
+
+# Другой пример полиморфизма с оператором +
+print("\nПолиморфизм встроенных операторов:")
+print(5 + 3)           # сложение чисел
+print("Hello" + "World")  # конкатенация строк
+print([1, 2] + [3, 4]) # объединение списков
