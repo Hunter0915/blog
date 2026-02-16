@@ -1,0 +1,72 @@
+-- Блок 1. Базовые задачи
+
+-- 1. Количество строк и столбцов в датасете
+SELECT COUNT(*) AS rows_count FROM world_cities;
+-- Количество столбцов можно получить из системной таблицы (зависит от СУБД)
+-- Например, в PostgreSQL:
+-- SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'world_cities';
+
+-- 2. Количество уникальных стран и городов
+SELECT 
+    COUNT(DISTINCT Country) AS unique_countries,
+    COUNT(DISTINCT City) AS unique_cities
+FROM world_cities;
+
+-- 3. Количество пропусков в Population, Latitude, Longitude
+SELECT 
+    COUNT(*) - COUNT(Population) AS population_nulls,
+    COUNT(*) - COUNT(Latitude) AS latitude_nulls,
+    COUNT(*) - COUNT(Longitude) AS longitude_nulls
+FROM world_cities;
+
+-- 4. Выборка строк без пропусков в Population
+SELECT * FROM world_cities WHERE Population IS NOT NULL;
+
+-- 5. Приведение названий стран и городов к нижнему регистру (при выборке)
+SELECT 
+    LOWER(City) AS city_lower,
+    LOWER(Country) AS country_lower,
+    Population, Latitude, Longitude, Region
+FROM world_cities;
+
+-- 6. Удаление дубликатов записей (выборка уникальных строк)
+SELECT DISTINCT * FROM world_cities;
+
+
+-- Блок 2. Анализ населения
+
+-- 7. Среднее и медианное население по странам (медиана через PERCENTILE_CONT, подходит для PostgreSQL, SQL Server)
+SELECT 
+    Country,
+    AVG(Population) AS mean_population,
+    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY Population) AS median_population
+FROM world_cities
+GROUP BY Country;
+
+-- 8. Топ-10 самых населённых городов мира
+SELECT * 
+FROM world_cities
+ORDER BY Population DESC
+LIMIT 10;  -- или FETCH FIRST 10 ROWS ONLY
+
+-- 9. Для выбранной страны (например, 'us') среднее население по регионам
+SELECT 
+    Region,
+    AVG(Population) AS avg_population
+FROM world_cities
+WHERE Country = 'us'
+GROUP BY Region;
+
+-- 10. Города с населением более 1 миллиона человек
+SELECT * 
+FROM world_cities
+WHERE Population > 1000000;
+
+-- 11. Страны с наибольшим количеством крупных городов (>1 млн)
+SELECT 
+    Country,
+    COUNT(City) AS large_cities_count
+FROM world_cities
+WHERE Population > 1000000
+GROUP BY Country
+ORDER BY large_cities_count DESC;
