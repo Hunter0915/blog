@@ -1,0 +1,70 @@
+-- Количество строк в таблице
+SELECT COUNT(*) AS total_rows FROM sales_data;
+
+-- Информация о столбцах (для PostgreSQL, в других СУБД синтаксис может отличаться)
+SELECT column_name, data_type 
+FROM information_schema.columns 
+WHERE table_name = 'sales_data';
+
+-- Проверка наличия пропусков в ключевых столбцах
+SELECT 
+    COUNT(*) - COUNT(ORDERNUMBER) AS null_ordernumber,
+    COUNT(*) - COUNT(SALES) AS null_sales,
+    COUNT(*) - COUNT(PRODUCTLINE) AS null_productline
+FROM sales_data;
+
+-- Количество уникальных заказов
+SELECT COUNT(DISTINCT ORDERNUMBER) AS total_orders FROM sales_data;
+
+-- Количество уникальных категорий товаров
+SELECT COUNT(DISTINCT PRODUCTLINE) AS unique_productlines FROM sales_data;
+
+-- Средняя цена за единицу товара
+SELECT AVG(PRICEEACH) AS avg_price FROM sales_data;
+
+SELECT SUM(SALES) AS total_sales FROM sales_data;
+
+SELECT PRODUCTLINE, SUM(SALES) AS total_sales
+FROM sales_data
+GROUP BY PRODUCTLINE
+ORDER BY total_sales DESC
+LIMIT 1;
+
+SELECT YEAR_ID, COUNT(DISTINCT ORDERNUMBER) AS orders_count
+FROM sales_data
+GROUP BY YEAR_ID
+ORDER BY YEAR_ID;
+
+SELECT YEAR_ID, SUM(SALES) AS yearly_revenue
+FROM sales_data
+GROUP BY YEAR_ID
+ORDER BY YEAR_ID;
+
+SELECT ORDERNUMBER, SUM(SALES) AS order_total
+FROM sales_data
+GROUP BY ORDERNUMBER
+ORDER BY order_total DESC
+LIMIT 10;
+
+SELECT AVG(order_total) AS avg_order_value
+FROM (
+    SELECT ORDERNUMBER, SUM(SALES) AS order_total
+    FROM sales_data
+    GROUP BY ORDERNUMBER
+) AS order_totals;
+
+SELECT CUSTOMERNAME, SUM(SALES) AS total_spent
+FROM sales_data
+GROUP BY CUSTOMERNAME
+ORDER BY total_spent DESC
+LIMIT 1;
+
+SELECT CUSTOMERNAME, COUNT(DISTINCT ORDERNUMBER) AS orders_count
+FROM sales_data
+GROUP BY CUSTOMERNAME
+ORDER BY orders_count DESC;
+
+SELECT COUNTRY, SUM(SALES) AS total_sales
+FROM sales_data
+GROUP BY COUNTRY
+ORDER BY total_sales DESC;
