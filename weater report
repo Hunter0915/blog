@@ -1,0 +1,104 @@
+import requests
+import json
+from datetime import datetime
+
+# ============================================
+# Конфигурация
+# ============================================
+API_KEY = "2f2c9cef4aac05cfb5d103eb668c9e10"          # Вставьте свой ключ OpenWeatherMap
+CITY = input("Введите название города: ")  # Запрос города у пользователя
+
+# Базовые URL для запросов
+CURRENT_WEATHER_URL = "http://api.openweathermap.org/data/2.5/weather"
+FORECAST_URL = "http://api.openweathermap.org/data/2.5/forecast"
+
+# ============================================
+# Функция получения текущей погоды
+# ============================================
+def get_current_weather(city, api_key):
+    params = {
+        "q": city,
+        "appid": api_key,
+        "units": "metric",      # Для температуры в градусах Цельсия
+        "lang": "ru"            # Описание на русском
+    }
+    try:
+        response = requests.get(CURRENT_WEATHER_URL, params=params, timeout=10)
+        response.raise_for_status()          # Проверка на HTTP ошибки
+        data = response.json()
+
+        # Извлекаем нужные поля
+        city_name = data["name"]
+        temp = data["main"]["temp"]
+        description = data["weather"][0]["description"]
+
+        print("\n--- ТЕКУЩАЯ ПОГОДА ---")
+        print(f"Город: {city_name}")
+        print(f"Температура: {temp}°C")
+        print(f"Описание: {description.capitalize()}")
+
+    except requests.exceptions.RequestException as e:
+        print(f"Ошибка при запросе текущей погоды: {e}")
+    except KeyError as e:
+        print(f"Неожиданный формат ответа API (отсутствует поле {e})")
+    except Exception as e:
+        print(f"Произошла непредвиденная ошибка: {e}")
+
+# ============================================
+# Функция получения прогноза на несколько дней
+# ============================================
+def get_forecast(city, api_key):
+    params = {
+        "q": city,
+        "appid": api_key,
+        "units": "metric",
+        "lang": "ru"
+    }
+    try:
+        response = requests.get(FORECAST_URL, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+
+        # В OpenWeatherMap прогноз выдаётся срезами по 3 часа
+        # Сгруппируем по датам (без времени) и посчитаем среднюю температуру за день
+        forecast_dict = {}
+        for entry in data["list"]:
+            dt = datetime.fromtimestamp(entry["dt"])
+            date_str = dt.strftime("%d.%m.%Y")
+            temp = entry["main"]["temp"]
+            desc = entry["weather"][0]["description"]
+
+            if date_str not in forecast_dict:
+                forecast_dict[date_str] = {
+                    "temps": [],
+                    "descriptions": []
+                }
+            forecast_dict[date_str]["temps"].append(temp)
+            forecast_dict[date_str]["descriptions"].append(desc)
+
+        print("\n--- ПРОГНОЗ НА БЛИЖАЙШИЕ ДНИ ---")
+        # Выводим информацию для первых 5 дней (или сколько есть)
+        for i, (date_str, values) in enumerate(forecast_dict.items()):
+            if i >= 5:   # ограничим пятью днями
+                break
+            avg_temp = sum(values["temps"]) / len(values["temps"])
+            # Самое часто встречающееся описание (можно взять первое)
+            main_desc = max(set(values["descriptions"]), key=values["descriptions"].count)
+            print(f"{date_str}: средняя температура {avg_temp:.1f}°C, {main_desc.capitalize()}")
+
+    except requests.exceptions.RequestException as e:
+        print(f"Ошибка при запросе прогноза: {e}")
+    except KeyError as e:
+        print(f"Неожиданный формат ответа API (отсутствует поле {e})")
+    except Exception as e:
+        print(f"Произошла непредвиденная ошибка: {e}")
+
+# ============================================
+# Основная программа
+# ============================================
+if __name__ == "__main__":
+    if not API_KEY or API_KEY == "your_api_key_here":
+        print("Пожалуйста, укажите действующий API-ключ OpenWeatherMap в переменной API_KEY.")
+    else:
+        get_current_weather(CITY, API_KEY)
+        get_forecast(CITY, API_KEY)
