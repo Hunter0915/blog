@@ -1,0 +1,191 @@
+import requests
+import json
+from datetime import datetime
+import matplotlib.pyplot as plt
+import numpy as np
+
+# ============================================
+# Конфигурация
+# ============================================
+API_KEY = "your_api_key_here"          # Вставьте свой ключ OpenWeatherMap
+CITY = input("Введите название города: ")  # Запрос города у пользователя
+TEMP_THRESHOLD = 0                      # Порог температуры для предупреждения о морозе
+
+# Базовые URL для запросов
+CURRENT_WEATHER_URL = "http://api.openweathermap.org/data/2.5/weather"
+FORECAST_URL = "http://api.openweathermap.org/data/2.5/forecast"
+
+# Ключевые слова для определения осадков (на русском языке, т.к. используем lang=ru)
+PRECIPITATION_KEYWORDS = ["дождь", "снег", "ливень", "град", "морось", "гроза"]
+
+# ============================================
+# Функция получения текущей погоды
+# ============================================
+def get_current_weather(city, api_key):
+    params = {
+        "q": city,
+        "appid": api_key,
+        "units": "metric",      # Для температуры в градусах Цельсия
+        "lang": "ru"            # Описание на русском
+    }
+    try:
+        response = requests.get(CURRENT_WEATHER_URL, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+
+        city_name = data["name"]
+        temp = data["main"]["temp"]
+        description = data["weather"][0]["description"]
+
+        print("\n--- ТЕКУЩАЯ ПОГОДА ---")
+        print(f"Город: {city_name}")
+        print(f"Температура: {temp}°C")
+        print(f"Описание: {description.capitalize()}")
+
+        # Проверка уведомлений для текущей погоды
+        check_current_alerts(temp, description)
+
+    except requests.exceptions.RequestException as e:
+        print(f"Ошибка при запросе текущей погоды: {e}")
+    except KeyError as e:
+        print(f"Неожиданный формат ответа API (отсутствует поле {e})")
+    except Exception as e:
+        print(f"Произошла непредвиденная ошибка: {e}")
+
+# ============================================
+# Функция уведомлений для текущей погоды
+# ============================================
+def check_current_alerts(temp, description):
+    alerts = []
+    if temp < TEMP_THRESHOLD:
+        alerts.append("❄️ Ожидается мороз. Одевайтесь теплее!")
+    if any(keyword in description.lower() for keyword in PRECIPITATION_KEYWORDS):
+        alerts.append("☔ Возьмите зонт, ожидаются осадки.")
+    
+    if alerts:
+        print("\n--- ВНИМАНИЕ (СЕЙЧАС) ---")
+        for alert in alerts:
+            print(alert)
+
+# ============================================
+# Функция получения прогноза на несколько дней
+# ============================================
+def get_forecast(city, api_key):
+    params = {
+        "q": city,
+        "appid": api_key,
+        "units": "metric",
+        "lang": "ru"
+    }
+    try:
+        response = requests.get(FORECAST_URL, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+
+        # Словарь для хранения данных по дням
+        forecast_dict = {}
+        for entry in data["list"]:
+            dt = datetime.fromtimestamp(entry["dt"])
+            date_str = dt.strftime("%d.%m.%Y")
+            temp = entry["main"]["temp"]
+            desc = entry["weather"][0]["description"]
+
+            if date_str not in forecast_dict:
+                forecast_dict[date_str] = {
+                    "temps": [],
+                    "descriptions": []
+                }
+            forecast_dict[date_str]["temps"].append(temp)
+            forecast_dict[date_str]["descriptions"].append(desc)
+
+        print("\n--- ПРОГНОЗ НА БЛИЖАЙШИЕ ДНИ ---")
+        # Выводим информацию для первых 5 дней (или сколько есть)
+        for i, (date_str, values) in enumerate(forecast_dict.items()):
+            if i >= 5:
+                break
+            avg_temp = sum(values["temps"]) / len(values["temps"])
+            main_desc = max(set(values["descriptions"]), key=values["descriptions"].count)
+            print(f"{date_str}: средняя температура {avg_temp:.1f}°C, {main_desc.capitalize()}")
+
+        # Проверка уведомлений по прогнозу
+        check_forecast_alerts(forecast_dict)
+
+        # Построение графика
+        plot_temperature_forecast(forecast_dict)
+
+    except requests.exceptions.RequestException as e:
+        print(f"Ошибка при запросе прогноза: {e}")
+    except KeyError as e:
+        print(f"Неожиданный формат ответа API (отсутствует поле {e})")
+    except Exception as e:
+        print(f"Произошла непредвиденная ошибка: {e}")
+
+# ============================================
+# Функция уведомлений на основе прогноза
+# ============================================
+def check_forecast_alerts(forecast_dict):
+    alerts = []
+    for date_str, values in forecast_dict.items():
+        avg_temp = sum(values["temps"]) / len(values["temps"])
+        # Проверка на мороз (средняя температура ниже порога)
+        if avg_temp < TEMP_THRESHOLD:
+            alerts.append(f"❄️ {date_str}: ожидается мороз (ср. {avg_temp:.1f}°C). Одевайтесь теплее!")
+        
+        # Проверка на осадки в течение дня
+        # Если хотя бы одно описание содержит ключевое слово осадков
+        daily_desc = " ".join(values["descriptions"]).lower()
+        if any(keyword in daily_desc for keyword in PRECIPITATION_KEYWORDS):
+            alerts.append(f"☔ {date_str}: возможны осадки. Не забудьте зонт!")
+    
+    if alerts:
+        print("\n--- ПРЕДУПРЕЖДЕНИЯ НА БЛИЖАЙШИЕ ДНИ ---")
+        for alert in alerts:
+            print(alert)
+
+# ============================================
+# Функция построения графика температуры
+# ============================================
+def plot_temperature_forecast(forecast_dict):
+    # Подготовка данных
+    dates = []
+    avg_temps = []
+    
+    # Ограничим количество дней для графика (например, все доступные дни, но не более 7)
+    items = list(forecast_dict.items())[:7]
+    for date_str, values in items:
+        dates.append(date_str)
+        avg_temp = sum(values["temps"]) / len(values["temps"])
+        avg_temps.append(avg_temp)
+    
+    if not dates:
+        print("Нет данных для построения графика.")
+        return
+    
+    # Создание графика
+    plt.figure(figsize=(10, 5))
+    plt.plot(dates, avg_temps, marker='o', linestyle='-', color='b', label='Средняя температура')
+    plt.xlabel('Дата')
+    plt.ylabel('Температура (°C)')
+    plt.title(f'Прогноз температуры в г. {CITY}')
+    plt.grid(True, linestyle='--', alpha=0.7)
+    
+    # Добавление подписей значений над точками
+    for i, (date, temp) in enumerate(zip(dates, avg_temps)):
+        plt.text(i, temp + 0.5, f'{temp:.1f}°C', ha='center', va='bottom', fontsize=9)
+    
+    # Горизонтальная линия порога мороза
+    plt.axhline(y=TEMP_THRESHOLD, color='r', linestyle='--', label=f'Порог мороза ({TEMP_THRESHOLD}°C)')
+    
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+# ============================================
+# Основная программа
+# ============================================
+if __name__ == "__main__":
+    if not API_KEY or API_KEY == "your_api_key_here":
+        print("Пожалуйста, укажите действующий API-ключ OpenWeatherMap в переменной API_KEY.")
+    else:
+        get_current_weather(CITY, API_KEY)
+        get_forecast(CITY, API_KEY)
